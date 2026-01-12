@@ -23,7 +23,12 @@ def main() -> None:
     for _ in range(T):
         n, m = map(int, input().split())
 
-        seg = SegmentTree(n + m)
+        seg = SegmentTree(
+                n + m,
+                merge=lambda a, b: a + b,
+                identity=0
+            )
+
 
         pos = [0] * (n + 1)
 

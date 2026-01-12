@@ -71,7 +71,6 @@ class SegmentTree(Generic[T, U]):
 
 
 
-from __future__ import annotations
 import sys
 input = sys.stdin.readline
 

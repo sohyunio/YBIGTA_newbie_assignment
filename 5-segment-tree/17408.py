@@ -1,4 +1,3 @@
-from __future__ import annotations
 from lib import SegmentTree
 import sys
 input = sys.stdin.readline
