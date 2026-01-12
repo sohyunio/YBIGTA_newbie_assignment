@@ -72,9 +72,9 @@ class SegmentTree(Generic[T, U]):
 
 
 import sys
+
 input = sys.stdin.readline
 
-INF = 10**18
 
 """
 TODO:
@@ -83,70 +83,33 @@ TODO:
 """
 
 
-class Pair(tuple[int, int]):
-    """
-    힌트: 2243, 3653에서 int에 대한 세그먼트 트리를 만들었다면 여기서는 Pair에 대한 세그먼트 트리를 만들 수 있을지도...?
-    """
-    def __new__(cls, a: int, b: int) -> 'Pair':
-        return super().__new__(cls, (a, b))
-
-    @staticmethod
-    def default() -> 'Pair':
-        """
-        기본값
-        이게 왜 필요할까...?
-        """
-        return Pair(0, 0)
-
-    @staticmethod
-    def f_conv(w: int) -> 'Pair':
-        """
-        원본 수열의 값을 대응되는 Pair 값으로 변환하는 연산
-        이게 왜 필요할까...?
-        """
-        return Pair(w, 0)
-
-    @staticmethod
-    def f_merge(a: Pair, b: Pair) -> 'Pair':
-        """
-        두 Pair를 하나의 Pair로 합치는 연산
-        이게 왜 필요할까...?
-        """
-        return Pair(*sorted([*a, *b], reverse=True)[:2])
-
-    def sum(self) -> int:
-        return self[0] + self[1]
-
-
 def main() -> None:
-    '''
-    입력 받아 segment tree 생성 후,
-    두 종류의 쿼리 처리
-    1 i v: A[i] = v
-    2 l r: A[l..r] 구간에서 가장 큰 두 수의 합
-    '''
     # 구현하세요!
-    N = int(input())
-    A = list(map(int, input().split()))
-    Q = int(input())
+    '''
+    segment tree 이용 사탕 상자 관리
+    
+    - 맛 번호를 인덱스로 하여 사탕 개수 저장
+    - 누적합 기준 k번째 원소의 인덱스 찾기
+    - 사탕 추가 및 제거 연산 처리
+    '''
+    n = int(input())
+    MAX = 100000
+    seg = SegmentTree(n=MAX, merge=lambda a, b: a + b)
+    
+    for _ in range(n):
+        cmd = list(map(int, input().split()))
+        
+        if cmd[0] == 1:
+            # 1 B: B번째 사탕 꺼내기
+            B = cmd[1]
+            taste = seg.find_kth(B)
+            print(taste)
+            seg.update(taste, -1)
 
-    seg = SegmentTree(A,
-        Pair.default,
-        Pair.f_conv,
-        Pair.f_merge
-        )
-
-    for _ in range(Q):
-        q = list(map(int, input().split()))
-        if q[0] == 1:
-            _, i, v = q
-            seg.update(i - 1, v)
         else:
-            _, l, r = q
-            res = seg.query(l - 1, r - 1)
-            print(res.sum())
-    pass
-
+            # 2 B C: 맛 B 사탕 C개 추가
+            _, B, C = cmd
+            seg.update(B, C)
 
 if __name__ == "__main__":
     main()

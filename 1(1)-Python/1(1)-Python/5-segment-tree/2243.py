@@ -22,7 +22,7 @@ def main() -> None:
     '''
     n = int(input())
     MAX = 100000
-    seg = SegmentTree(n=MAX, merge=lambda a, b: a + b, identity=0)
+    seg = SegmentTree(n=MAX, merge=lambda a, b: a + b)
     
     for _ in range(n):
         cmd = list(map(int, input().split()))

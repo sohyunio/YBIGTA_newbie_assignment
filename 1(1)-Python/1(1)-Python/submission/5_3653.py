@@ -74,7 +74,6 @@ class SegmentTree(Generic[T, U]):
 import sys
 input = sys.stdin.readline
 
-INF = 10**18
 
 """
 TODO:
@@ -83,68 +82,46 @@ TODO:
 """
 
 
-class Pair(tuple[int, int]):
-    """
-    힌트: 2243, 3653에서 int에 대한 세그먼트 트리를 만들었다면 여기서는 Pair에 대한 세그먼트 트리를 만들 수 있을지도...?
-    """
-    def __new__(cls, a: int, b: int) -> 'Pair':
-        return super().__new__(cls, (a, b))
-
-    @staticmethod
-    def default() -> 'Pair':
-        """
-        기본값
-        이게 왜 필요할까...?
-        """
-        return Pair(0, 0)
-
-    @staticmethod
-    def f_conv(w: int) -> 'Pair':
-        """
-        원본 수열의 값을 대응되는 Pair 값으로 변환하는 연산
-        이게 왜 필요할까...?
-        """
-        return Pair(w, 0)
-
-    @staticmethod
-    def f_merge(a: Pair, b: Pair) -> 'Pair':
-        """
-        두 Pair를 하나의 Pair로 합치는 연산
-        이게 왜 필요할까...?
-        """
-        return Pair(*sorted([*a, *b], reverse=True)[:2])
-
-    def sum(self) -> int:
-        return self[0] + self[1]
-
-
 def main() -> None:
     '''
-    입력 받아 segment tree 생성 후,
-    두 종류의 쿼리 처리
-    1 i v: A[i] = v
-    2 l r: A[l..r] 구간에서 가장 큰 두 수의 합
+    segment tree로 DVD 관리 문제 해결
+
+    - 각 DVD의 위치를 인덱스로 관리
+    - 누적합으로 현재 DVD 위에 있는 개수 계산
+    - 꺼낸 DVD 항상 맨 위로 이동
     '''
     # 구현하세요!
-    N = int(input())
-    A = list(map(int, input().split()))
-    Q = int(input())
+    T = int(input())
+    for _ in range(T):
+        n, m = map(int, input().split())
 
-    seg = SegmentTree(A,
-        Pair.default,
-        Pair.f_conv,
-        Pair.f_merge
-        )
+        seg = SegmentTree(n + m)
 
-    for _ in range(Q):
-        q = list(map(int, input().split()))
-        if q[0] == 1:
-            _, i, v = q
-            seg.update(i - 1, v)
-        else:
-            _, l, r = q
-            res = seg.query(l - 1, r - 1)
-            print(res.sum())
+        pos = [0] * (n + 1)
+
+        # 초기 배치
+        for dvd in range(1, n + 1):
+            position = m + dvd - 1
+            pos[dvd] = position
+            seg.update(position, 1)
+
+        top = m - 1
+        commands = list(map(int, input().split()))
+
+        for dvd in commands:
+            cur_pos = pos[dvd]
+
+            # 위에 있는 DVD 개수
+            above = seg.query(0, cur_pos)
+            print(above, end=" ")
+
+            # 제거
+            seg.update(cur_pos, -1)
+
+            # 맨 위로 이동
+            pos[dvd] = top
+            seg.update(top, 1)
+            top -= 1
     pass
 
 
