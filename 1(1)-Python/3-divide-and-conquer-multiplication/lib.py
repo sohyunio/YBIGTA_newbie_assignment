@@ -46,6 +46,10 @@ class Matrix:
         return self.matrix[key[0]][key[1]]
 
     def __setitem__(self, key: tuple[int, int], value: int) -> None:
+        '''
+        행렬의 (i, j) 위치에 값 할당.
+        값은 MOD로 나눈 나머지로 저장.
+        '''
         # 구현하세요!
         self.matrix[key[0]][key[1]] = value % self.MOD
         pass
@@ -65,6 +69,12 @@ class Matrix:
         return result
 
     def __pow__(self, n: int) -> Matrix:
+        '''
+        행렬의 거듭제곱을 분할 정복 방식으로 계산
+
+        n == 0 인 경우 단위 행렬 반환,
+        행렬 곱셈 __matmul__ 활용
+        '''
         # 구현하세요!
         if n == 0:
             return Matrix.eye(self.shape[0])
@@ -83,5 +93,9 @@ class Matrix:
 
     def __repr__(self) -> str:
         # 구현하세요!
+        '''
+        행렬 출력하기 위한 문자열 표현 반환
+        각 원소는 공백으로 구분, 행단위로 출력
+        '''
         return '\n'.join(' '.join(str(v % self.MOD) for v in row) for row in self.matrix)
         pass

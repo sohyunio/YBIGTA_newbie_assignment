@@ -1,6 +1,9 @@
+from __future__ import annotations
 from lib import SegmentTree
 import sys
+input = sys.stdin.readline
 
+INF = 10**18
 
 """
 TODO:
@@ -45,7 +48,32 @@ class Pair(tuple[int, int]):
 
 
 def main() -> None:
+    '''
+    입력 받아 segment tree 생성 후,
+    두 종류의 쿼리 처리
+    1 i v: A[i] = v
+    2 l r: A[l..r] 구간에서 가장 큰 두 수의 합
+    '''
     # 구현하세요!
+    N = int(input())
+    A = list(map(int, input().split()))
+    Q = int(input())
+
+    seg = SegmentTree(A,
+        Pair.default,
+        Pair.f_conv,
+        Pair.f_merge
+        )
+
+    for _ in range(Q):
+        q = list(map(int, input().split()))
+        if q[0] == 1:
+            _, i, v = q
+            seg.update(i - 1, v)
+        else:
+            _, l, r = q
+            res = seg.query(l - 1, r - 1)
+            print(res.sum())
     pass
 
 
