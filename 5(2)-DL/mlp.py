@@ -118,7 +118,7 @@ class MultiLayerPerceptron(object):
         ### CODE HERE ###  
         # 'gradient 계산하는 과정'을 참고하여 gradient 계산
         # dh3, db3, dW3, dz2, dh2, db2, dW2, dz1, dh1, db1, dW1 계산
-        dh3 = dz3 * (h3 > 0)
+        dh3 = dz3 * (h3 > 0) # ReLU
         db3 = np.sum(dh3, axis=0)
         dW3 = z2.T @ dh3 + 2 * L2_norm * W3
         dz2 = dh3 @ W3.T
