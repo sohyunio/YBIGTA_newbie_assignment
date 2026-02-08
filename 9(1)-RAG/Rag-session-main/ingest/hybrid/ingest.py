@@ -1,0 +1,116 @@
+"""Ingest corpus into Elasticsearch Hybrid index (wiki-hybrid).
+
+Index mapping: text field + dense_vector(4096, cosine).
+Bulk chunk_size=100 (heavier with 4096-dim vectors).
+"""
+
+import json
+import os
+from pathlib import Path
+
+import numpy as np
+from dotenv import load_dotenv
+from elasticsearch import Elasticsearch
+from elasticsearch.helpers import bulk
+from tqdm import tqdm
+
+load_dotenv()
+
+INDEX_NAME = "wiki-hybrid"
+RAW_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "raw"
+PROCESSED_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "processed"
+
+INDEX_MAPPINGS = {
+    "properties": {
+        "text": {"type": "text", "analyzer": "standard"},
+        "embedding": {
+            "type": "dense_vector",
+            "dims": 4096,
+            "index": True,
+            "similarity": "cosine",
+        },
+    }
+}
+
+
+def get_es_client() -> Elasticsearch:
+    return Elasticsearch(
+        os.getenv("ELASTIC_ENDPOINT"),
+        api_key=os.getenv("ELASTIC_API_KEY"),
+        request_timeout=120,
+    )
+
+
+def _generate_actions(corpus_path: Path, embeddings: np.ndarray, ids: list[str]):
+    id_to_idx = {doc_id: idx for idx, doc_id in enumerate(ids)}
+
+    with open(corpus_path, encoding="utf-8") as f:
+        for line in f:
+            doc = json.loads(line)
+            doc_id = doc["id"]
+            idx = id_to_idx.get(doc_id)
+            if idx is None:
+                continue
+            yield {
+                "_index": INDEX_NAME,
+                "_id": doc_id,
+                "_source": {
+                    "text": doc["text"],
+                    "embedding": embeddings[idx].tolist(),
+                },
+            }
+
+
+def ingest(progress_callback=None):
+    """Create hybrid index (text + dense_vector) and bulk-ingest corpus.
+
+    Args:
+        progress_callback: Optional callback(count) called after completion.
+
+    Returns:
+        int: Number of documents indexed.
+
+    Hints:
+        - Load embeddings from PROCESSED_DIR / "embeddings.npy"
+        - Load IDs from PROCESSED_DIR / "embedding_ids.json"
+        - Use get_es_client(), delete/create index with INDEX_MAPPINGS
+        - Use _generate_actions(corpus_path, embeddings, ids) for bulk data
+        - Use elasticsearch.helpers.bulk() with chunk_size=100
+        - Call es.indices.refresh() after bulk ingest
+    """
+    # 1. ES 클라이언트 및 경로 설정
+    es = get_es_client()
+    corpus_path = RAW_DIR / "corpus.jsonl"
+
+    # 2. 임베딩 데이터 및 ID 로드
+    embeddings = np.load(PROCESSED_DIR / "embeddings.npy")
+    with open(PROCESSED_DIR / "embedding_ids.json", "r", encoding="utf-8") as f:
+        ids = json.load(f)
+    
+    # 3. 기존 하이브리드 인덱스 초기화
+    if es.indices.exists(index=INDEX_NAME):
+        es.indices.delete(index=INDEX_NAME)
+
+    # 4. 하이브리드 인덱스 생성
+    es.indices.create(index=INDEX_NAME, mappings=INDEX_MAPPINGS)
+
+    # 5. 대량 적재 실행
+    success_count, _ = bulk(
+        es,
+        _generate_actions(corpus_path, embeddings, ids),
+        chunk_size=100,
+        stats_only=True
+    )
+
+    # 6. 인덱스 새로고침 및 결과 반환
+    es.indices.refresh(index=INDEX_NAME)
+    
+    if progress_callback:
+        progress_callback(success_count)
+
+    print(f"Successfully indexed {success_count} documents to {INDEX_NAME}.")
+    return success_count
+
+
+if __name__ == "__main__":
+    ingest()
